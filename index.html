@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport"
+content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 
 <title>PAIN LEGENDS</title>
 
@@ -11,16 +12,15 @@
   margin:0;
   padding:0;
   box-sizing:border-box;
-  -webkit-user-select:none;
   user-select:none;
-  -webkit-touch-callout:none;
+  -webkit-user-select:none;
 }
 
 html,body{
   width:100%;
   height:100%;
   overflow:hidden;
-  background:#020204;
+  background:#020205;
   font-family:Arial,sans-serif;
 }
 
@@ -36,15 +36,15 @@ canvas{
   left:18px;
   z-index:10;
   color:white;
+  text-shadow:0 2px 6px #000;
   pointer-events:none;
-  text-shadow:0 2px 5px #000;
 }
 
 #title{
-  font-size:22px;
+  color:#ff2020;
+  font-size:23px;
   font-weight:900;
   letter-spacing:3px;
-  color:#ff3030;
 }
 
 #score{
@@ -54,23 +54,30 @@ canvas{
 }
 
 #speed{
-  margin-top:3px;
+  margin-top:4px;
   font-size:13px;
   opacity:.8;
 }
 
 #message{
   position:fixed;
+  z-index:20;
   left:50%;
   top:50%;
   transform:translate(-50%,-50%);
   color:white;
+  text-align:center;
   font-size:22px;
   font-weight:bold;
-  text-align:center;
-  z-index:20;
+  text-shadow:0 3px 12px #000;
   pointer-events:none;
-  text-shadow:0 3px 10px #000;
+}
+
+#status{
+  margin-top:10px;
+  color:#ff4040;
+  font-size:13px;
+  font-weight:normal;
 }
 
 #controls{
@@ -92,11 +99,17 @@ canvas{
 <div id="hud">
   <div id="title">PAIN LEGENDS</div>
   <div id="score">SCORE: 0</div>
-  <div id="speed">SPEED: 0</div>
+  <div id="speed">SPEED: 10</div>
 </div>
 
-<div id="message">SWIPE TO MOVE</div>
-<div id="controls">SWIPE ← →</div>
+<div id="message">
+  LOADING NINJA...
+  <div id="status"></div>
+</div>
+
+<div id="controls">
+  SWIPE ← →
+</div>
 
 <script type="importmap">
 {
@@ -112,35 +125,39 @@ canvas{
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
+
 /* =========================
    SCENE
 ========================= */
 
 const scene = new THREE.Scene();
 
-scene.background = new THREE.Color(0x020205);
+scene.background =
+  new THREE.Color(0x020205);
 
-scene.fog = new THREE.FogExp2(
-  0x05050a,
-  0.018
-);
+scene.fog =
+  new THREE.FogExp2(
+    0x05050b,
+    0.018
+  );
 
 
 /* =========================
    CAMERA
 ========================= */
 
-const camera = new THREE.PerspectiveCamera(
-  60,
-  innerWidth / innerHeight,
-  0.1,
-  300
-);
+const camera =
+  new THREE.PerspectiveCamera(
+    60,
+    innerWidth / innerHeight,
+    0.1,
+    300
+  );
 
 camera.position.set(
   0,
-  5,
-  9
+  4.2,
+  8.5
 );
 
 
@@ -148,10 +165,11 @@ camera.position.set(
    RENDERER
 ========================= */
 
-const renderer = new THREE.WebGLRenderer({
-  antialias:true,
-  powerPreference:"high-performance"
-});
+const renderer =
+  new THREE.WebGLRenderer({
+    antialias:true,
+    powerPreference:"high-performance"
+  });
 
 renderer.setPixelRatio(
   Math.min(devicePixelRatio,2)
@@ -163,6 +181,7 @@ renderer.setSize(
 );
 
 renderer.shadowMap.enabled = true;
+
 renderer.shadowMap.type =
   THREE.PCFSoftShadowMap;
 
@@ -172,7 +191,8 @@ renderer.outputColorSpace =
 renderer.toneMapping =
   THREE.ACESFilmicToneMapping;
 
-renderer.toneMappingExposure = 1.15;
+renderer.toneMappingExposure =
+  1.15;
 
 document.body.appendChild(
   renderer.domElement
@@ -180,22 +200,24 @@ document.body.appendChild(
 
 
 /* =========================
-   LIGHTS
+   LIGHTING
 ========================= */
 
-const hemi = new THREE.HemisphereLight(
-  0x6677aa,
-  0x080808,
-  1.8
-);
+const hemi =
+  new THREE.HemisphereLight(
+    0x7180aa,
+    0x080808,
+    2
+  );
 
 scene.add(hemi);
 
 
-const moon = new THREE.DirectionalLight(
-  0x9db8ff,
-  2.4
-);
+const moon =
+  new THREE.DirectionalLight(
+    0xaac0ff,
+    2.5
+  );
 
 moon.position.set(
   -8,
@@ -211,11 +233,12 @@ moon.shadow.mapSize.height = 1024;
 scene.add(moon);
 
 
-const redLight = new THREE.PointLight(
-  0xff2020,
-  8,
-  35
-);
+const redLight =
+  new THREE.PointLight(
+    0xff1010,
+    8,
+    35
+  );
 
 redLight.position.set(
   0,
@@ -230,27 +253,24 @@ scene.add(redLight);
    ROAD
 ========================= */
 
-const roadMaterial =
-  new THREE.MeshStandardMaterial({
-    color:0x111217,
-    roughness:.35,
-    metalness:.55
-  });
-
-const road = new THREE.Mesh(
-  new THREE.PlaneGeometry(
-    12,
-    500
-  ),
-  roadMaterial
-);
+const road =
+  new THREE.Mesh(
+    new THREE.PlaneGeometry(
+      12,
+      500
+    ),
+    new THREE.MeshStandardMaterial({
+      color:0x111217,
+      roughness:.3,
+      metalness:.6
+    })
+  );
 
 road.rotation.x =
   -Math.PI / 2;
 
-road.position.y = 0;
-
-road.position.z = -180;
+road.position.z =
+  -180;
 
 road.receiveShadow = true;
 
@@ -258,28 +278,26 @@ scene.add(road);
 
 
 /* =========================
-   ROAD LANES
+   LANE LINES
 ========================= */
 
-const laneMaterial =
-  new THREE.MeshBasicMaterial({
-    color:0x555b66
-  });
+for(const x of [-2,2]){
 
-for(let x of [-2,2]){
-
-  const line = new THREE.Mesh(
-    new THREE.BoxGeometry(
-      .07,
-      .02,
-      500
-    ),
-    laneMaterial
-  );
+  const line =
+    new THREE.Mesh(
+      new THREE.BoxGeometry(
+        .07,
+        .025,
+        500
+      ),
+      new THREE.MeshBasicMaterial({
+        color:0x707784
+      })
+    );
 
   line.position.set(
     x,
-    .025,
+    .03,
     -180
   );
 
@@ -288,118 +306,70 @@ for(let x of [-2,2]){
 
 
 /* =========================
-   ROAD SIDES
-========================= */
-
-const sideMaterial =
-  new THREE.MeshStandardMaterial({
-    color:0x17171b,
-    roughness:.8
-  });
-
-for(const x of [-7,7]){
-
-  const side = new THREE.Mesh(
-    new THREE.BoxGeometry(
-      2,
-      .25,
-      500
-    ),
-    sideMaterial
-  );
-
-  side.position.set(
-    x,
-    -.1,
-    -180
-  );
-
-  side.receiveShadow = true;
-
-  scene.add(side);
-}
-
-
-/* =========================
    CITY
 ========================= */
 
-function createBuilding(
+function building(
   x,
   z,
-  width,
-  height,
-  depth
+  w,
+  h,
+  d
 ){
 
-  const material =
-    new THREE.MeshStandardMaterial({
-      color:new THREE.Color(
-        0.025,
-        0.028,
-        0.045
-      ),
-      roughness:.9
-    });
-
-  const building =
+  const b =
     new THREE.Mesh(
       new THREE.BoxGeometry(
-        width,
-        height,
-        depth
+        w,h,d
       ),
-      material
+      new THREE.MeshStandardMaterial({
+        color:0x070914,
+        roughness:.9
+      })
     );
 
-  building.position.set(
+  b.position.set(
     x,
-    height/2,
+    h/2,
     z
   );
 
-  building.castShadow = true;
-  building.receiveShadow = true;
+  b.castShadow = true;
 
-  scene.add(building);
+  scene.add(b);
 
-
-  /* Windows */
 
   for(
-    let y = 2;
-    y < height - 1;
-    y += 2.3
+    let y=2;
+    y<h-1;
+    y+=2.4
   ){
 
     for(
-      let wx = -width/2 + .7;
-      wx < width/2;
-      wx += 1.5
+      let wx=-w/2+.6;
+      wx<w/2;
+      wx+=1.4
     ){
-
-      const windowLight =
-        new THREE.MeshBasicMaterial({
-          color:
-            Math.random() > .35
-            ? 0xff3030
-            : 0x263044
-        });
 
       const win =
         new THREE.Mesh(
           new THREE.BoxGeometry(
-            .45,
-            .65,
+            .4,
+            .6,
             .03
           ),
-          windowLight
+          new THREE.MeshBasicMaterial({
+            color:
+              Math.random()>.35
+              ? 0xff3030
+              : 0x263044
+          })
         );
 
       win.position.set(
-        x + wx,
+        x+wx,
         y,
-        z - depth/2 - .02
+        z-d/2-.02
       );
 
       scene.add(win);
@@ -408,46 +378,44 @@ function createBuilding(
 }
 
 
-/* Generate city */
-
 for(let i=0;i<70;i++){
 
-  const z = -i * 7 - 10;
+  const z =
+    -i*7-10;
 
-  createBuilding(
-    -10 - Math.random()*4,
+  building(
+    -10-Math.random()*4,
     z,
-    3 + Math.random()*3,
-    5 + Math.random()*16,
+    3+Math.random()*3,
+    5+Math.random()*16,
     4
   );
 
-  createBuilding(
-    10 + Math.random()*4,
+  building(
+    10+Math.random()*4,
     z,
-    3 + Math.random()*3,
-    5 + Math.random()*16,
+    3+Math.random()*3,
+    5+Math.random()*16,
     4
   );
 }
 
 
 /* =========================
-   RED STREET LIGHTS
+   RED LIGHTS
 ========================= */
 
-for(let i=0;i<80;i++){
+for(let i=0;i<70;i++){
 
-  const z = -i * 7 - 8;
+  const z =
+    -i*7-8;
 
   for(const x of [-5.8,5.8]){
 
     const pole =
       new THREE.Mesh(
         new THREE.CylinderGeometry(
-          .04,
-          .04,
-          3
+          .04,.04,3
         ),
         new THREE.MeshStandardMaterial({
           color:0x222222
@@ -498,23 +466,40 @@ scene.add(player);
 
 
 /* =========================
-   NINJA MODEL
+   NINJA
 ========================= */
-
-const loader =
-  new GLTFLoader();
 
 let ninja = null;
 let mixer = null;
 
+const loader =
+  new GLTFLoader();
+
+
+function setStatus(text){
+
+  document.getElementById(
+    "status"
+  ).textContent = text;
+}
+
+
 loader.load(
-  "ninja_root.glb",
 
-  (gltf)=>{
+  "./ninja_root.glb",
 
-    ninja = gltf.scene;
+  function(gltf){
 
-    /* Model size */
+    console.log(
+      "NINJA LOADED",
+      gltf
+    );
+
+    ninja =
+      gltf.scene;
+
+
+    /* Find model size */
 
     const box =
       new THREE.Box3()
@@ -525,13 +510,13 @@ loader.load(
 
     box.getSize(size);
 
-    const height =
-      size.y;
 
-    if(height > 0){
+    /* Automatic scale */
+
+    if(size.y > 0){
 
       const scale =
-        2.7 / height;
+        2.7 / size.y;
 
       ninja.scale.setScalar(
         scale
@@ -539,7 +524,7 @@ loader.load(
     }
 
 
-    /* Center model */
+    /* Recalculate box */
 
     const box2 =
       new THREE.Box3()
@@ -550,15 +535,21 @@ loader.load(
 
     box2.getCenter(center);
 
-    ninja.position.x -= center.x;
-    ninja.position.z -= center.z;
-    ninja.position.y -= box2.min.y;
+
+    ninja.position.x =
+      -center.x;
+
+    ninja.position.z =
+      -center.z;
+
+    ninja.position.y =
+      -box2.min.y;
 
 
     /* Shadows */
 
     ninja.traverse(
-      (obj)=>{
+      function(obj){
 
         if(obj.isMesh){
 
@@ -576,8 +567,7 @@ loader.load(
 
 
     /*
-      Some models face the opposite
-      direction.
+      Character orientation
     */
 
     ninja.rotation.y =
@@ -591,25 +581,26 @@ loader.load(
        ANIMATIONS
     ===================== */
 
-    if(gltf.animations &&
-       gltf.animations.length > 0){
+    if(
+      gltf.animations &&
+      gltf.animations.length
+    ){
 
       mixer =
         new THREE.AnimationMixer(
           ninja
         );
 
+
       console.log(
-        "Animations:",
+        "ANIMATIONS:",
         gltf.animations.map(
-          a => a.name
+          a=>a.name
         )
       );
 
 
-      /* Try to find running animation */
-
-      let runAnimation =
+      let run =
         gltf.animations.find(
           a =>
             /run|running|jog/i
@@ -617,63 +608,73 @@ loader.load(
         );
 
 
-      if(!runAnimation){
+      if(!run){
 
-        runAnimation =
+        run =
           gltf.animations[0];
       }
 
 
       const action =
-        mixer.clipAction(
-          runAnimation
-        );
+        mixer.clipAction(run);
 
       action.reset();
+
       action.play();
 
-      action.timeScale = 1.15;
+      action.timeScale =
+        1.15;
     }
+
 
     document.getElementById(
       "message"
-    ).style.display = "none";
+    ).innerHTML = "";
 
   },
 
-  (progress)=>{
+
+  function(progress){
 
     if(progress.total){
 
-      console.log(
-        "Loading ninja:",
+      const percent =
         Math.round(
           progress.loaded /
           progress.total * 100
-        ) + "%"
+        );
+
+      setStatus(
+        "Loading: " +
+        percent +
+        "%"
       );
     }
-
   },
 
-  (error)=>{
+
+  function(error){
 
     console.error(
-      "Ninja loading error:",
+      "NINJA LOAD ERROR:",
       error
     );
 
     document.getElementById(
       "message"
     ).innerHTML =
-      "NINJA MODEL ERROR";
+      "🥷 NINJA ERROR";
 
+    setStatus(
+      "Could not load ninja_root.glb"
+    );
   }
+
 );
 
 
 /* =========================
-   MOVEMENT
+   LANES
 ========================= */
 
 let lane = 0;
@@ -682,8 +683,6 @@ let targetX = 0;
 
 const laneWidth = 2;
 
-
-/* Smooth movement */
 
 function moveLeft(){
 
@@ -710,24 +709,25 @@ function moveRight(){
 
 
 /* =========================
-   TOUCH SWIPE
+   TOUCH
 ========================= */
 
-let touchStartX = 0;
-let touchStartY = 0;
+let startX = 0;
+let startY = 0;
+
 
 renderer.domElement.addEventListener(
   "touchstart",
-  (e)=>{
+  function(e){
 
-    const touch =
+    const t =
       e.touches[0];
 
-    touchStartX =
-      touch.clientX;
+    startX =
+      t.clientX;
 
-    touchStartY =
-      touch.clientY;
+    startY =
+      t.clientY;
 
   },
   {passive:true}
@@ -736,31 +736,30 @@ renderer.domElement.addEventListener(
 
 renderer.domElement.addEventListener(
   "touchend",
-  (e)=>{
+  function(e){
 
-    const touch =
+    const t =
       e.changedTouches[0];
 
     const dx =
-      touch.clientX -
-      touchStartX;
+      t.clientX-startX;
 
     const dy =
-      touch.clientY -
-      touchStartY;
+      t.clientY-startY;
 
 
-    if(Math.abs(dx) > 40 &&
-       Math.abs(dx) > Math.abs(dy)){
+    if(
+      Math.abs(dx)>40 &&
+      Math.abs(dx)>Math.abs(dy)
+    ){
 
-      if(dx > 0){
+      if(dx>0){
 
         moveRight();
 
       }else{
 
         moveLeft();
-
       }
     }
 
@@ -775,45 +774,42 @@ renderer.domElement.addEventListener(
 
 window.addEventListener(
   "keydown",
-  (e)=>{
+  function(e){
 
     if(
-      e.key === "ArrowLeft" ||
-      e.key.toLowerCase() === "a"
+      e.key==="ArrowLeft" ||
+      e.key.toLowerCase()==="a"
     ){
 
       moveLeft();
-
     }
 
+
     if(
-      e.key === "ArrowRight" ||
-      e.key.toLowerCase() === "d"
+      e.key==="ArrowRight" ||
+      e.key.toLowerCase()==="d"
     ){
 
       moveRight();
-
     }
+
   }
 );
 
 
 /* =========================
-   GAME VARIABLES
+   GAME
 ========================= */
 
 let score = 0;
-
 let speed = 10;
 
-let lastTime =
+let last =
   performance.now();
-
-let distance = 0;
 
 
 /* =========================
-   ANIMATION
+   LOOP
 ========================= */
 
 function animate(){
@@ -828,48 +824,52 @@ function animate(){
 
   const dt =
     Math.min(
-      (now - lastTime) / 1000,
+      (now-last)/1000,
       .05
     );
 
-  lastTime = now;
+  last = now;
 
 
-  /* Increase speed */
+  /* Speed */
 
-  distance += speed * dt;
+  speed +=
+    dt*.025;
 
-  speed += dt * .025;
+  score +=
+    dt*speed;
 
-  score += dt * speed;
 
-
-  /* Ninja lane movement */
+  /* Player */
 
   player.position.x +=
     (
       targetX -
       player.position.x
-    ) * Math.min(
+    ) *
+    Math.min(
       1,
-      dt * 10
+      dt*10
     );
 
 
-  /* Running bob */
+  /* Simple bob */
 
-  if(ninja && !mixer){
+  if(
+    ninja &&
+    !mixer
+  ){
 
     ninja.position.y =
       Math.abs(
         Math.sin(
-          performance.now() * .012
+          performance.now()*.012
         )
-      ) * .06;
+      )*.06;
   }
 
 
-  /* Animation mixer */
+  /* Animation */
 
   if(mixer){
 
@@ -879,22 +879,25 @@ function animate(){
 
   /* Camera */
 
-  const desiredCamera =
+  const cameraTarget =
     new THREE.Vector3(
-      player.position.x * .35,
+      player.position.x*.35,
       4.2,
       8.5
     );
 
   camera.position.lerp(
-    desiredCamera,
-    Math.min(1,dt*4)
+    cameraTarget,
+    Math.min(
+      1,
+      dt*4
+    )
   );
 
 
   camera.lookAt(
     player.position.x,
-    1.5,
+    1.4,
     -8
   );
 
@@ -928,7 +931,7 @@ function animate(){
 
 window.addEventListener(
   "resize",
-  ()=>{
+  function(){
 
     camera.aspect =
       innerWidth /
@@ -940,6 +943,7 @@ window.addEventListener(
       innerWidth,
       innerHeight
     );
+
   }
 );
 
