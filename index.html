@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport"
+content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+
+<title>PAIN LEGENDS</title>
+
+<style>
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  user-select:none;
+  -webkit-user-select:none;
+}
+
+html,body{
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  background:#020204;
+  font-family:Arial,sans-serif;
+}
+
+canvas{
+  display:block;
+  width:100%;
+  height:100%;
+  touch-action:none;
+}
+
+#hud{
+  position:fixed;
+  top:15px;
+  left:15px;
+  right:15px;
+  z-index:10;
+
+  display:flex;
+  justify-content:space-between;
+
+  color:white;
+  pointer-events:none;
+}
+
+.logo{
+  color:#ff1717;
+  font-size:25px;
+  font-weight:1000;
+  font-style:italic;
+
+  text-shadow:
+    0 0 10px red,
+    0 0 25px red;
+}
+
+.stats{
+  text-align:right;
+  font-weight:bold;
+}
+
+#score{
+  font-size:24px;
+}
+
+#coins{
+  color:#ffd21c;
+  font-size:17px;
+}
+
+#start{
+  position:fixed;
+  inset:0;
+
+  z-index:20;
+
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+
+  color:white;
+
+  background:
+    radial-gradient(
+      circle,
+      rgba(90,0,0,.3),
+      rgba(0,0,0,.8)
+    );
+}
+
+.title{
+  color:#ff1515;
+
+  font-size:52px;
+  font-weight:1000;
+  font-style:italic;
+
+  text-shadow:
+    0 0 15px red,
+    0 0 45px red;
+}
+
+.subtitle{
+  margin-top:8px;
+  margin-bottom:28px;
+
+  color:#aaa;
+  letter-spacing:4px;
+}
+
+button{
+  border:0;
+
+  padding:16px 55px;
+
+  border-radius:15px;
+
+  background:#d90000;
+  color:white;
+
+  font-size:21px;
+  font-weight:900;
+
+  box-shadow:
+    0 0 15px red,
+    0 0 35px rgba(255,0,0,.5);
+}
+</style>
+</head>
+
+<body>
+
+<div id="hud">
+
+  <div class="logo">
+    PAIN<br>
+    LEGENDS
+  </div>
+
+  <div class="stats">
+    SCORE<br>
+    <span id="score">0</span><br>
+    <span id="coins">◆ 0</span>
+  </div>
+
+</div>
+
+<div id="start">
+
+  <div class="title">
+    PAIN
+  </div>
+
+  <div class="subtitle">
+    LEGENDS
+  </div>
+
+  <button onclick="startGame()">
+    PLAY
+  </button>
+
+</div>
+
+
+<script type="importmap">
+{
+  "imports":{
+    "three":
+      "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+
+    "three/addons/":
+      "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"
+  }
+}
+</script>
+
+
+<script type="module">
+
+import * as THREE from "three";
+
+import {
+  GLTFLoader
+} from "three/addons/loaders/GLTFLoader.js";
+
+
+/* =========================
+   SCENE
+========================= */
+
+const scene =
+  new THREE.Scene();
+
+
+scene.background =
+  new THREE.Color(0x02030a);
+
+
+/* =========================
+   CAMERA
+========================= */
+
+const camera =
+  new THREE.PerspectiveCamera(
+    65,
+    innerWidth/innerHeight,
+    .1,
+    1000
+  );
+
+
+camera.position.set(
+  0,
+  3.2,
+  7
+);
+
+
+/* =========================
+   RENDERER
+========================= */
+
+const renderer =
+  new THREE.WebGLRenderer({
+    antialias:true,
+    powerPreference:"high-performance"
+  });
+
+
+renderer.setPixelRatio(
+  Math.min(devicePixelRatio,2)
+);
+
+renderer.setSize(
+  innerWidth,
+  innerHeight
+);
+
+renderer.shadowMap.enabled=true;
+
+renderer.shadowMap.type=
+  THREE.PCFSoftShadowMap;
+
+document.body.appendChild(
+  renderer.domElement
+);
+
+
+/* =========================
+   LIGHTING
+========================= */
+
+const ambient =
+  new THREE.HemisphereLight(
+    0x8899bb,
+    0x080808,
+    2
+  );
+
+scene.add(ambient);
+
+
+const moon =
+  new THREE.DirectionalLight(
+    0xffffff,
+    3
+  );
+
+moon.position.set(
+  -5,
+  10,
+  5
+);
+
+moon.castShadow=true;
+
+scene.add(moon);
+
+
+/* RED LIGHT */
+
+const redLight =
+  new THREE.PointLight(
+    0xff0000,
+    35,
+    25
+  );
+
+redLight.position.set(
+  0,
+  3,
+  -8
+);
+
+scene.add(redLight);
+
+
+/* =========================
+   ROAD
+========================= */
+
+const roadMaterial =
+  new THREE.MeshStandardMaterial({
+    color:0x101116,
+    roughness:.55,
+    metalness:.3
+  });
+
+
+const road =
+  new THREE.Mesh(
+    new THREE.PlaneGeometry(
+      12,
+      220
+    ),
+    roadMaterial
+  );
+
+
+road.rotation.x=-Math.PI/2;
+
+road.position.z=-95;
+
+road.receiveShadow=true;
+
+scene.add(road);
+
+
+/* =========================
+   LANE LINES
+========================= */
+
+function createLaneLine(x){
+
+  const material =
+    new THREE.MeshStandardMaterial({
+      color:0x55555a,
+      emissive:0x111111
+    });
+
+  const line =
+    new THREE.Mesh(
+      new THREE.BoxGeometry(
+        .045,
+        .015,
+        220
+      ),
+      material
+    );
+
+  line.position.set(
+    x,
+    .02,
+    -95
+  );
+
+  scene.add(line);
+}
+
+
+createLaneLine(-2);
+createLaneLine(2);
+
+
+/* =========================
+   SIDE LIGHTS
+========================= */
+
+for(let i=0;i<40;i++){
+
+  const z=-i*5;
+
+  const material =
+    new THREE.MeshStandardMaterial({
+      color:0x220000,
+      emissive:0xff0000,
+      emissiveIntensity:2
+    });
+
+  const left =
+    new THREE.Mesh(
+      new THREE.BoxGeometry(
+        .15,
+        .7,
+        .15
+      ),
+      material
+    );
+
+  left.position.set(
+    -5.8,
+    .35,
+    z
+  );
+
+  scene.add(left);
+
+
+  const right =
+    left.clone();
+
+  right.position.x=5.8;
+
+  scene.add(right);
+}
+
+
+/* =========================
+   CITY
+========================= */
+
+for(let i=0;i<80;i++){
+
+  const h=
+    2+
+    Math.random()*10;
+
+  const w=
+    1+
+    Math.random()*2;
+
+  const building =
+    new THREE.Mesh(
+      new THREE.BoxGeometry(
+        w,
+        h,
+        w
+      ),
+      new THREE.MeshStandardMaterial({
+        color:
+          new THREE.Color(
+            .015,
+            .018,
+            .03+
+            Math.random()*.04
+          )
+      })
+    );
+
+  building.position.set(
+    Math.random()<.5
+      ? -8-Math.random()*8
+      : 8+Math.random()*8,
+
+    h/2,
+
+    -Math.random()*150
+  );
+
+  scene.add(building);
+}
+
+
+/* =========================
+   PLAYER
+========================= */
+
+const player =
+  new THREE.Group();
+
+scene.add(player);
+
+player.position.set(
+  0,
+  0,
+  3
+);
+
+
+/*
+  TEMPORARY 3D WARRIOR
+
+  من بعد غادي نعوضوه
+  بموديل GLB واقعي.
+*/
+
+
+function createWarrior(){
+
+  const warrior =
+    new THREE.Group();
+
+
+  /* BODY */
+
+  const black =
+    new THREE.MeshStandardMaterial({
+      color:0x09090c,
+      roughness:.3,
+      metalness:.75
+    });
+
+
+  const red =
+    new THREE.MeshStandardMaterial({
+      color:0x7d0000,
+      emissive:0x330000,
+      roughness:.25,
+      metalness:.7
+    });
+
+
+  const body =
+    new THREE.Mesh(
+      new THREE.CapsuleGeometry(
+        .42,
+        .85,
+        8,
+        16
+      ),
+      black
+    );
+
+  body.position.y=1.15;
+
+  body.castShadow=true;
+
+  warrior.add(body);
+
+
+  /* CHEST */
+
+  const chest =
+    new THREE.Mesh(
+      new THREE.BoxGeometry(
+        .55,
+        .55,
+        .25
+      ),
+      red
+    );
+
+  chest.position.set(
+    0,
+    1.35,
+    -.35
+  );
+
+  chest.castShadow=true;
+
+  warrior.add(chest);
+
+
+  /* HEAD */
+
+  const head =
+    new THREE.Mesh(
+      new THREE.SphereGeometry(
+        .33,
+        20,
+        20
+      ),
+      black
+    );
+
+  head.position.y=2;
+
+  head.castShadow=true;
+
+  warrior.add(head);
+
+
+  /* HORNS */
+
+  for(const side of [-1,1]){
+
+    const horn =
+      new THREE.Mesh(
+        new THREE.ConeGeometry(
+          .09,
+          .45,
+          8
+        ),
+        black
+      );
+
+    horn.position.set(
+      side*.20,
+      2.30,
+      0
+    );
+
+    horn.rotation.z=
+      side*.45;
+
+    warrior.add(horn);
+  }
+
+
+  /* VISOR */
+
+  const visor =
+    new THREE.Mesh(
+      new THREE.BoxGeometry(
+        .38,
+        .07,
+        .05
+      ),
+      new THREE.MeshStandardMaterial({
+        color:0xff0000,
+        emissive:0xff0000,
+        emissiveIntensity:4
+      })
+    );
+
+  visor.position.set(
+    0,
+    2.02,
+    -.31
+  );
+
+  warrior.add(visor);
+
+
+  /* LEGS */
+
+  for(const side of [-1,1]){
+
+    const leg =
+      new THREE.Mesh(
+        new THREE.CapsuleGeometry(
+          .13,
+          .65,
+          6,
+          10
+        ),
+        black
+      );
+
+    leg.position.set(
+      side*.18,
+      .45,
+      0
+    );
+
+    leg.castShadow=true;
+
+    warrior.add(leg);
+  }
+
+
+  /* BOOTS */
+
+  for(const side of [-1,1]){
+
+    const boot =
+      new THREE.Mesh(
+        new THREE.BoxGeometry(
+          .28,
+          .18,
+          .5
+        ),
+        red
+      );
+
+    boot.position.set(
+      side*.18,
+      .05,
+      -.12
+    );
+
+    warrior.add(boot);
+  }
+
+
+  return warrior;
+}
+
+
+const warrior=
+  createWarrior();
+
+player.add(warrior);
+
+
+/* =========================
+   LANES
+========================= */
+
+let lane=1;
+
+const lanePositions=[
+  -2,
+  0,
+  2
+];
+
+
+let targetX=0;
+
+
+/* =========================
+   GAME
+========================= */
+
+let playing=false;
+
+let score=0;
+
+let coins=0;
+
+let speed=.18;
+
+let clock=
+  new THREE.Clock();
+
+
+function startGame(){
+
+  playing=true;
+
+  score=0;
+
+  coins=0;
+
+  speed=.18;
+
+  lane=1;
+
+  targetX=0;
+
+  player.position.x=0;
+
+  document.getElementById(
+    "start"
+  ).style.display="none";
+}
+
+
+/* =========================
+   MOVEMENT
+========================= */
+
+function moveLeft(){
+
+  if(!playing)return;
+
+  if(lane>0){
+
+    lane--;
+
+    targetX=
+      lanePositions[lane];
+  }
+}
+
+
+function moveRight(){
+
+  if(!playing)return;
+
+  if(lane<2){
+
+    lane++;
+
+    targetX=
+      lanePositions[lane];
+  }
+}
+
+
+/* =========================
+   TOUCH
+========================= */
+
+let startX=0;
+let startY=0;
+
+renderer.domElement.addEventListener(
+  "touchstart",
+  e=>{
+
+    const t=e.touches[0];
+
+    startX=t.clientX;
+    startY=t.clientY;
+
+  },
+  {passive:true}
+);
+
+
+renderer.domElement.addEventListener(
+  "touchend",
+  e=>{
+
+    if(!playing)return;
+
+    const t=
+      e.changedTouches[0];
+
+    const dx=
+      t.clientX-startX;
+
+    const dy=
+      t.clientY-startY;
+
+    if(
+      Math.abs(dx)<30 &&
+      Math.abs(dy)<30
+    )return;
+
+
+    if(
+      Math.abs(dx)>
+      Math.abs(dy)
+    ){
+
+      if(dx>0)
+        moveRight();
+      else
+        moveLeft();
+
+    }
+
+  },
+  {passive:true}
+);
+
+
+/* =========================
+   KEYBOARD
+========================= */
+
+window.addEventListener(
+  "keydown",
+  e=>{
+
+    if(e.key==="ArrowLeft")
+      moveLeft();
+
+    if(e.key==="ArrowRight")
+      moveRight();
+
+  }
+);
+
+
+/* =========================
+   ANIMATION
+========================= */
+
+function animate(){
+
+  requestAnimationFrame(
+    animate
+  );
+
+  const dt=
+    clock.getDelta();
+
+
+  if(playing){
+
+    score+=dt*10;
+
+    speed+=dt*.002;
+
+
+    /* SMOOTH LANE */
+
+    player.position.x +=
+      (
+        targetX-
+        player.position.x
+      )*.16;
+
+
+    /* RUNNING BOB */
+
+    warrior.position.y=
+      Math.sin(
+        performance.now()*.012
+      )*.045;
+
+
+    /* CAMERA */
+
+    camera.position.x +=
+      (
+        player.position.x*.35-
+        camera.position.x
+      )*.08;
+
+
+    camera.lookAt(
+      player.position.x,
+      1.2,
+      -5
+    );
+
+
+    document.getElementById(
+      "score"
+    ).textContent=
+      Math.floor(score);
+
+
+    document.getElementById(
+      "coins"
+    ).textContent=
+      "◆ "+coins;
+  }
+
+
+  renderer.render(
+    scene,
+    camera
+  );
+}
+
+
+animate();
+
+
+/* =========================
+   RESIZE
+========================= */
+
+window.addEventListener(
+  "resize",
+  ()=>{
+
+    camera.aspect=
+      innerWidth/
+      innerHeight;
+
+    camera.updateProjectionMatrix();
+
+    renderer.setSize(
+      innerWidth,
+      innerHeight
+    );
+
+  }
+);
+
+</script>
+
+</body>
+</html>
