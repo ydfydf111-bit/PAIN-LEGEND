@@ -67,16 +67,16 @@ canvas{
   transform:translate(-50%,-50%);
   color:white;
   text-align:center;
-  font-size:22px;
+  font-size:20px;
   font-weight:bold;
   text-shadow:0 3px 12px #000;
   pointer-events:none;
 }
 
 #status{
-  margin-top:10px;
+  margin-top:8px;
   color:#ff4040;
-  font-size:13px;
+  font-size:12px;
   font-weight:normal;
 }
 
@@ -89,7 +89,6 @@ canvas{
   opacity:.45;
   font-size:12px;
   z-index:10;
-  pointer-events:none;
 }
 </style>
 </head>
@@ -108,8 +107,9 @@ canvas{
 </div>
 
 <div id="controls">
-  SWIPE ← →
+  SWIPE ← → &nbsp; ↑ JUMP &nbsp; ↓ SLIDE
 </div>
+
 
 <script type="importmap">
 {
@@ -120,15 +120,16 @@ canvas{
 }
 </script>
 
+
 <script type="module">
 
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
 
-/* =========================
+/* =====================================================
    SCENE
-========================= */
+===================================================== */
 
 const scene = new THREE.Scene();
 
@@ -142,9 +143,9 @@ scene.fog =
   );
 
 
-/* =========================
+/* =====================================================
    CAMERA
-========================= */
+===================================================== */
 
 const camera =
   new THREE.PerspectiveCamera(
@@ -161,9 +162,9 @@ camera.position.set(
 );
 
 
-/* =========================
+/* =====================================================
    RENDERER
-========================= */
+===================================================== */
 
 const renderer =
   new THREE.WebGLRenderer({
@@ -199,9 +200,9 @@ document.body.appendChild(
 );
 
 
-/* =========================
-   LIGHTING
-========================= */
+/* =====================================================
+   LIGHTS
+===================================================== */
 
 const hemi =
   new THREE.HemisphereLight(
@@ -227,8 +228,11 @@ moon.position.set(
 
 moon.castShadow = true;
 
-moon.shadow.mapSize.width = 1024;
-moon.shadow.mapSize.height = 1024;
+moon.shadow.mapSize.width =
+  1024;
+
+moon.shadow.mapSize.height =
+  1024;
 
 scene.add(moon);
 
@@ -249,9 +253,9 @@ redLight.position.set(
 scene.add(redLight);
 
 
-/* =========================
+/* =====================================================
    ROAD
-========================= */
+===================================================== */
 
 const road =
   new THREE.Mesh(
@@ -277,9 +281,9 @@ road.receiveShadow = true;
 scene.add(road);
 
 
-/* =========================
-   LANE LINES
-========================= */
+/* =====================================================
+   LANES
+===================================================== */
 
 for(const x of [-2,2]){
 
@@ -305,11 +309,11 @@ for(const x of [-2,2]){
 }
 
 
-/* =========================
+/* =====================================================
    CITY
-========================= */
+===================================================== */
 
-function building(
+function createBuilding(
   x,
   z,
   w,
@@ -383,7 +387,7 @@ for(let i=0;i<70;i++){
   const z =
     -i*7-10;
 
-  building(
+  createBuilding(
     -10-Math.random()*4,
     z,
     3+Math.random()*3,
@@ -391,7 +395,7 @@ for(let i=0;i<70;i++){
     4
   );
 
-  building(
+  createBuilding(
     10+Math.random()*4,
     z,
     3+Math.random()*3,
@@ -401,9 +405,9 @@ for(let i=0;i<70;i++){
 }
 
 
-/* =========================
-   RED LIGHTS
-========================= */
+/* =====================================================
+   STREET LIGHTS
+===================================================== */
 
 for(let i=0;i<70;i++){
 
@@ -449,9 +453,9 @@ for(let i=0;i<70;i++){
 }
 
 
-/* =========================
+/* =====================================================
    PLAYER
-========================= */
+===================================================== */
 
 const player =
   new THREE.Group();
@@ -465,23 +469,22 @@ player.position.set(
 scene.add(player);
 
 
-/* =========================
+/* =====================================================
    NINJA
-========================= */
+===================================================== */
 
 let ninja = null;
+
 let mixer = null;
+
+let runAction = null;
+
+let jumpAction = null;
+
+let slideAction = null;
 
 const loader =
   new GLTFLoader();
-
-
-function setStatus(text){
-
-  document.getElementById(
-    "status"
-  ).textContent = text;
-}
 
 
 loader.load(
@@ -491,15 +494,14 @@ loader.load(
   function(gltf){
 
     console.log(
-      "NINJA LOADED",
-      gltf
+      "NINJA LOADED"
     );
 
     ninja =
       gltf.scene;
 
 
-    /* Find model size */
+    /* MODEL SCALE */
 
     const box =
       new THREE.Box3()
@@ -510,8 +512,6 @@ loader.load(
 
     box.getSize(size);
 
-
-    /* Automatic scale */
 
     if(size.y > 0){
 
@@ -524,7 +524,7 @@ loader.load(
     }
 
 
-    /* Recalculate box */
+    /* CENTER MODEL */
 
     const box2 =
       new THREE.Box3()
@@ -546,7 +546,7 @@ loader.load(
       -box2.min.y;
 
 
-    /* Shadows */
+    /* SHADOWS */
 
     ninja.traverse(
       function(obj){
@@ -554,20 +554,18 @@ loader.load(
         if(obj.isMesh){
 
           obj.castShadow = true;
+
           obj.receiveShadow = true;
-
-          if(obj.material){
-
-            obj.material.needsUpdate =
-              true;
-          }
         }
+
       }
     );
 
 
     /*
-      Character orientation
+      Face forward.
+      If the ninja faces backwards,
+      change Math.PI to 0.
     */
 
     ninja.rotation.y =
@@ -577,13 +575,13 @@ loader.load(
     player.add(ninja);
 
 
-    /* =====================
+    /* =================================================
        ANIMATIONS
-    ===================== */
+    ================================================= */
 
     if(
       gltf.animations &&
-      gltf.animations.length
+      gltf.animations.length > 0
     ){
 
       mixer =
@@ -593,37 +591,102 @@ loader.load(
 
 
       console.log(
-        "ANIMATIONS:",
-        gltf.animations.map(
-          a=>a.name
-        )
+        "AVAILABLE ANIMATIONS:"
+      );
+
+      gltf.animations.forEach(
+        function(animation){
+
+          console.log(
+            animation.name
+          );
+
+        }
       );
 
 
-      let run =
+      /* RUN */
+
+      const runClip =
         gltf.animations.find(
-          a =>
-            /run|running|jog/i
-              .test(a.name)
+          function(a){
+
+            return /run|running|jog|walk/i
+              .test(a.name);
+
+          }
         );
 
 
-      if(!run){
+      if(runClip){
 
-        run =
-          gltf.animations[0];
+        runAction =
+          mixer.clipAction(
+            runClip
+          );
+
+        runAction.play();
+
+        runAction.timeScale =
+          1.15;
       }
 
 
-      const action =
-        mixer.clipAction(run);
+      /* JUMP */
 
-      action.reset();
+      const jumpClip =
+        gltf.animations.find(
+          function(a){
 
-      action.play();
+            return /jump/i
+              .test(a.name);
 
-      action.timeScale =
-        1.15;
+          }
+        );
+
+
+      if(jumpClip){
+
+        jumpAction =
+          mixer.clipAction(
+            jumpClip
+          );
+
+        jumpAction.loop =
+          THREE.LoopOnce;
+
+        jumpAction.clampWhenFinished =
+          true;
+      }
+
+
+      /* SLIDE */
+
+      const slideClip =
+        gltf.animations.find(
+          function(a){
+
+            return /slide|crouch|duck/i
+              .test(a.name);
+
+          }
+        );
+
+
+      if(slideClip){
+
+        slideAction =
+          mixer.clipAction(
+            slideClip
+          );
+
+        slideAction.loop =
+          THREE.LoopOnce;
+
+        slideAction.clampWhenFinished =
+          true;
+      }
+
     }
 
 
@@ -644,19 +707,20 @@ loader.load(
           progress.total * 100
         );
 
-      setStatus(
+      document.getElementById(
+        "status"
+      ).textContent =
         "Loading: " +
         percent +
-        "%"
-      );
+        "%";
     }
+
   },
 
 
   function(error){
 
     console.error(
-      "NINJA LOAD ERROR:",
       error
     );
 
@@ -665,17 +729,18 @@ loader.load(
     ).innerHTML =
       "🥷 NINJA ERROR";
 
-    setStatus(
-      "Could not load ninja_root.glb"
-    );
+    document.getElementById(
+      "status"
+    ).textContent =
+      "Could not load ninja_root.glb";
   }
 
 );
 
 
-/* =========================
-   LANES
-========================= */
+/* =====================================================
+   PLAYER MOVEMENT
+===================================================== */
 
 let lane = 0;
 
@@ -708,11 +773,85 @@ function moveRight(){
 }
 
 
-/* =========================
-   TOUCH
-========================= */
+/* =====================================================
+   JUMP
+===================================================== */
+
+let jumping = false;
+
+let jumpVelocity = 0;
+
+const gravity = 22;
+
+
+function jump(){
+
+  if(jumping)
+    return;
+
+
+  jumping = true;
+
+  jumpVelocity = 9;
+
+
+  if(jumpAction){
+
+    if(runAction)
+      runAction.fadeOut(.12);
+
+    jumpAction.reset();
+
+    jumpAction.fadeIn(.12);
+
+    jumpAction.play();
+  }
+}
+
+
+/* =====================================================
+   SLIDE
+===================================================== */
+
+let sliding = false;
+
+let slideTimer = 0;
+
+
+function slide(){
+
+  if(jumping)
+    return;
+
+  if(sliding)
+    return;
+
+
+  sliding = true;
+
+  slideTimer = .7;
+
+
+  if(slideAction){
+
+    if(runAction)
+      runAction.fadeOut(.12);
+
+    slideAction.reset();
+
+    slideAction.fadeIn(.12);
+
+    slideAction.play();
+  }
+}
+
+
+/* =====================================================
+   TOUCH SWIPE
+===================================================== */
 
 let startX = 0;
+
 let startY = 0;
 
 
@@ -749,17 +888,38 @@ renderer.domElement.addEventListener(
 
 
     if(
-      Math.abs(dx)>40 &&
-      Math.abs(dx)>Math.abs(dy)
+      Math.abs(dx) < 40 &&
+      Math.abs(dy) < 40
     ){
 
-      if(dx>0){
+      return;
+    }
+
+
+    if(
+      Math.abs(dx) >
+      Math.abs(dy)
+    ){
+
+      if(dx > 0){
 
         moveRight();
 
       }else{
 
         moveLeft();
+      }
+
+    }else{
+
+      if(dy < 0){
+
+        jump();
+
+      }else{
+
+        slide();
+
       }
     }
 
@@ -768,49 +928,45 @@ renderer.domElement.addEventListener(
 );
 
 
-/* =========================
+/* =====================================================
    KEYBOARD
-========================= */
+===================================================== */
 
 window.addEventListener(
   "keydown",
   function(e){
 
-    if(
-      e.key==="ArrowLeft" ||
-      e.key.toLowerCase()==="a"
-    ){
-
+    if(e.key === "ArrowLeft")
       moveLeft();
-    }
 
-
-    if(
-      e.key==="ArrowRight" ||
-      e.key.toLowerCase()==="d"
-    ){
-
+    if(e.key === "ArrowRight")
       moveRight();
-    }
+
+    if(e.key === "ArrowUp")
+      jump();
+
+    if(e.key === "ArrowDown")
+      slide();
 
   }
 );
 
 
-/* =========================
-   GAME
-========================= */
+/* =====================================================
+   GAME VARIABLES
+===================================================== */
 
 let score = 0;
+
 let speed = 10;
 
-let last =
+let lastTime =
   performance.now();
 
 
-/* =========================
-   LOOP
-========================= */
+/* =====================================================
+   ANIMATION LOOP
+===================================================== */
 
 function animate(){
 
@@ -824,14 +980,14 @@ function animate(){
 
   const dt =
     Math.min(
-      (now-last)/1000,
+      (now-lastTime)/1000,
       .05
     );
 
-  last = now;
+  lastTime = now;
 
 
-  /* Speed */
+  /* SPEED */
 
   speed +=
     dt*.025;
@@ -840,7 +996,9 @@ function animate(){
     dt*speed;
 
 
-  /* Player */
+  /* =================================================
+     LANE MOVEMENT
+  ================================================= */
 
   player.position.x +=
     (
@@ -853,23 +1011,79 @@ function animate(){
     );
 
 
-  /* Simple bob */
+  /* =================================================
+     JUMP PHYSICS
+  ================================================= */
 
-  if(
-    ninja &&
-    !mixer
-  ){
+  if(jumping){
 
-    ninja.position.y =
-      Math.abs(
-        Math.sin(
-          performance.now()*.012
-        )
-      )*.06;
+    player.position.y +=
+      jumpVelocity * dt;
+
+    jumpVelocity -=
+      gravity * dt;
+
+
+    if(
+      player.position.y <= 0
+    ){
+
+      player.position.y = 0;
+
+      jumping = false;
+
+      jumpVelocity = 0;
+
+
+      if(runAction){
+
+        if(jumpAction)
+          jumpAction.fadeOut(.12);
+
+        runAction.reset();
+
+        runAction.fadeIn(.12);
+
+        runAction.play();
+      }
+
+    }
   }
 
 
-  /* Animation */
+  /* =================================================
+     SLIDE TIMER
+  ================================================= */
+
+  if(sliding){
+
+    slideTimer -= dt;
+
+
+    if(slideTimer <= 0){
+
+      sliding = false;
+
+
+      if(runAction){
+
+        if(slideAction)
+          slideAction.fadeOut(.12);
+
+        runAction.reset();
+
+        runAction.fadeIn(.12);
+
+        runAction.play();
+      }
+
+    }
+  }
+
+
+  /* =================================================
+     ANIMATION MIXER
+  ================================================= */
 
   if(mixer){
 
@@ -877,17 +1091,20 @@ function animate(){
   }
 
 
-  /* Camera */
+  /* =================================================
+     CAMERA
+  ================================================= */
 
-  const cameraTarget =
+  const desiredCamera =
     new THREE.Vector3(
       player.position.x*.35,
-      4.2,
+      4.2 + player.position.y*.15,
       8.5
     );
 
+
   camera.position.lerp(
-    cameraTarget,
+    desiredCamera,
     Math.min(
       1,
       dt*4
@@ -897,12 +1114,14 @@ function animate(){
 
   camera.lookAt(
     player.position.x,
-    1.4,
+    1.4 + player.position.y*.3,
     -8
   );
 
 
-  /* HUD */
+  /* =================================================
+     HUD
+  ================================================= */
 
   document.getElementById(
     "score"
@@ -925,9 +1144,9 @@ function animate(){
 }
 
 
-/* =========================
+/* =====================================================
    RESIZE
-========================= */
+===================================================== */
 
 window.addEventListener(
   "resize",
